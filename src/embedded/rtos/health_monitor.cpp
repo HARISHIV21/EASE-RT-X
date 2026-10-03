@@ -1,0 +1,3 @@
+#include "health_monitor.hpp"
+#include <cstring>
+namespace ease_rt_x {void HealthMonitor::register_task(const char*n,std::uint32_t t){if(count_<MAX_TASKS)tasks_[count_++]={n,t,0,false};}void HealthMonitor::heartbeat(const char*n,std::uint32_t tick){for(std::uint32_t i=0;i<count_;++i)if(std::strcmp(tasks_[i].name,n)==0){tasks_[i].last_heartbeat_tick=tick;tasks_[i].healthy=true;}}void HealthMonitor::update(std::uint32_t now){for(std::uint32_t i=0;i<count_;++i)tasks_[i].healthy=(now-tasks_[i].last_heartbeat_tick)<=tasks_[i].timeout_ms;}bool HealthMonitor::all_healthy()const{for(std::uint32_t i=0;i<count_;++i)if(!tasks_[i].healthy)return false;return true;}}

@@ -1,0 +1,8 @@
+build/
+.vscode/
+*.exe
+*.obj
+*.o
+__pycache__/
+
+external/FreeRTOS-Kernel/
