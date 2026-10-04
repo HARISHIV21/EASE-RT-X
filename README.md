@@ -1,30 +1,40 @@
-# EASE-RT X
+ # EASE-RT X
 
-**Embedded Autonomous Software-Defined Real-Time Platform**
+## Embedded Autonomous Software-Defined Real-Time Platform
 
-A simulation-first flagship project demonstrating C/C++, FreeRTOS, deterministic periodic execution, CAN-FD, embedded Linux/ROS2 integration points, sensor simulation, localization, LiDAR perception, planning, control, diagnostics, fault detection, degraded/fail-safe behavior and quantitative verification.
+EASE-RT X is a **simulation-first heterogeneous embedded platform** designed to demonstrate practical engineering across **real-time embedded software, distributed communication, autonomous-system software, fault management, safety supervision, and automated verification**.
 
-## Core technologies
+The platform combines a **FreeRTOS-based real-time execution layer** with an **Embedded Linux/ROS2 integration point**, connected through a modeled **CAN-FD communication layer** and a simulated autonomous sensor/control pipeline.
 
-C, C++, FreeRTOS, CMake, CAN-FD protocol modelling, Linux/ROS2 integration point, Python verification tooling.
+The project focuses on one engineering question:
 
-## Demonstrated fault classes
+> **Can a distributed embedded system continue operating safely when timing, communication, sensing, or software faults occur?**
 
-- GNSS dropout / delayed / invalid sensor data
-- LiDAR invalidity
-- CAN-FD stale frames and sequence errors
-- control deadline violations
-- task heartbeat/watchdog timeout
-- timing degradation and recovery
+---
 
-## Build
+## Architecture
 
-Run `setup.ps1` from PowerShell. It obtains FreeRTOS-Kernel if absent, configures MinGW Makefiles and builds the runtime plus verification tests. The CTest suite contains both CAN-FD protocol verification and integrated system-logic verification.
-
-## Evidence
-
-The runtime prints system mode, RTOS health, timing state, task execution/deadline statistics, CAN-FD acceptance/rejection statistics and diagnostic record count. These values are runtime measurements and should be preserved as project evidence rather than invented.
-
-## Final validation
-
-See `docs/FINAL_VALIDATION.md` for the controlled fault campaign and the measurements to preserve as evidence.
+```text
+                    EASE-RT X
+                         │
+        ┌────────────────┴────────────────┐
+        │                                 │
+ Real-Time Embedded Layer          Autonomy Software Layer
+        │                                 │
+   C / FreeRTOS                    C++ / Linux / ROS2
+        │                                 │
+ ┌──────┴────────┐                 ┌──────┴──────────┐
+ │ Periodic Tasks│                 │ Localization    │
+ │ Health Monitor│                 │ Perception      │
+ │ Watchdog      │                 │ Planning        │
+ │ Safety        │                 │ Control         │
+ │ Diagnostics   │                 │                 │
+ └──────┬────────┘                 └──────┬──────────┘
+        │                                 │
+        └──────────── CAN-FD ─────────────┘
+                         │
+              ┌──────────┴──────────┐
+              │ Simulated Sensors   │
+              │ IMU / GNSS / LiDAR  │
+              │ Wheel Odometry      │
+              └─────────────────────┘
