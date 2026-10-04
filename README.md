@@ -38,3 +38,7 @@ The project focuses on one engineering question:
               │ IMU / GNSS / LiDAR  │
               │ Wheel Odometry      │
               └─────────────────────┘
+
+## System Architecture
+
+![EASE-RT X Architecture](docs/assets/EASE-RT-X-architecture.png)
