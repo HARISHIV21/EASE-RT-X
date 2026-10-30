@@ -42,11 +42,17 @@ add_executable(system_logic_test
     src/embedded/safety/safety_supervisor.cpp
     src/embedded/diagnostics/diagnostic_manager.cpp)
 target_include_directories(system_logic_test PRIVATE src)
+add_executable(timing_monitor_test
+    tests/timing_monitor_test.cpp
+    src/embedded/rtos/timing_monitor.cpp
+)
+
+target_include_directories(timing_monitor_test PRIVATE src)
 
 enable_testing()
 add_test(NAME canfd_protocol_test COMMAND canfd_protocol_test)
 add_test(NAME system_logic_test COMMAND system_logic_test)
-
+add_test(NAME timing_monitor_test COMMAND timing_monitor_test)
 
 add_test(NAME integrated_system_test COMMAND ease_rt_x --test)
 
