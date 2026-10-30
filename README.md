@@ -359,7 +359,9 @@ EASE-RT-X explores key engineering principles for dependable autonomous embedded
 - Automated software verification.
 
 The project provides a foundation for further development and validation of dependable autonomous embedded systems.
+## System Architecture
 
+![EASE-RT-X Architecture](docs/assets/EASE-RT-X-architecture.png)
 ---
 
 ## Repository
