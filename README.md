@@ -361,7 +361,7 @@ EASE-RT-X explores key engineering principles for dependable autonomous embedded
 The project provides a foundation for further development and validation of dependable autonomous embedded systems.
 ## System Architecture
 
-![EASE-RT-X Architecture](docs/assets/EASE-RT-X-architecture.png)
+![EASE-RT-X Architecture](docs/assetsdocs/assets/EASE-RT X System Architecture Infographic.png)
 ---
 
 ## Repository
