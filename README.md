@@ -30,7 +30,7 @@ The project emphasizes fault injection, timing analysis, system observability, a
 ---
 
 ## 2. System Architecture
-
+![EASE-RT-X System Architecture](docs/assets/EASE-RT-X-architecture.png)
 ```text
                          EASE-RT-X
                               |
@@ -359,9 +359,7 @@ EASE-RT-X explores key engineering principles for dependable autonomous embedded
 - Automated software verification.
 
 The project provides a foundation for further development and validation of dependable autonomous embedded systems.
-## System Architecture
-
-![EASE-RT-X Architecture](docs/assetsdocs/assets/EASE-RT X System Architecture Infographic.png)
+ 
 ---
 
 ## Repository
