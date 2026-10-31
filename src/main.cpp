@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <cstdint>
 #include <string>
@@ -62,6 +61,10 @@ static Stats autonomy_stats;
 static Stats safety_stats;
 
 static bool integration_test_mode = false;
+static bool recovery_test_mode = false;
+static bool saw_fail_safe = false;
+static bool saw_recovery = false;
+static TickType_t recovery_test_start_tick = 0;
 
 static std::uint32_t previous_deadline_misses = 0;
 
@@ -625,6 +628,16 @@ void MonitoringTask(void*) {
             safety.update(health, nullptr);
         }
 
+        // Record the states actually reached during the recovery test.
+        if (recovery_test_mode) {
+            if (safety.mode() == SystemMode::FAIL_SAFE) {
+                saw_fail_safe = true;
+            }
+            if (safety.mode() == SystemMode::RECOVERY) {
+                saw_recovery = true;
+            }
+        }
+
         // System report.
         std::cout
             << "\n=== EASE-RT X SYSTEM REPORT ===\n"
@@ -670,8 +683,52 @@ void MonitoringTask(void*) {
             << diagnostics.size()
             << "\n";
 
+        // Dedicated recovery test: prove FAIL_SAFE -> RECOVERY -> NORMAL.
+        if (
+            recovery_test_mode &&
+            saw_fail_safe &&
+            saw_recovery &&
+            safety.mode() == SystemMode::NORMAL &&
+            timing_faults.state() == TimingFaultState::OK &&
+            tasks_ok &&
+            canfd.healthy() &&
+            localization.state().confidence > 0.5 &&
+            control_stats.executions > 0 &&
+            sensors.healthy()
+        ) {
+            std::cout
+                << "\nRECOVERY TEST: PASS\n"
+                << "FAIL_SAFE observed: YES\n"
+                << "RECOVERY observed: YES\n"
+                << "Final safety mode: NORMAL\n"
+                << "Timing state: OK\n"
+                << "All task heartbeats healthy: YES\n"
+                << "Sensors healthy: YES\n";
+            std::cout.flush();
+            vTaskEndScheduler();
+            return;
+        }
+
+        // Fail cleanly rather than running forever if recovery does not complete.
+        if (
+            recovery_test_mode &&
+            (now - recovery_test_start_tick) >= pdMS_TO_TICKS(60000)
+        ) {
+            std::cout
+                << "\nRECOVERY TEST: FAIL (60-second timeout)\n"
+                << "FAIL_SAFE observed: " << (saw_fail_safe ? "YES" : "NO") << "\n"
+                << "RECOVERY observed: " << (saw_recovery ? "YES" : "NO") << "\n"
+                << "Final safety mode: " << mode_name(safety.mode()) << "\n"
+                << "Timing state: " << timing_name(timing_faults.state()) << "\n"
+                << "All task heartbeats healthy: " << (tasks_ok ? "YES" : "NO") << "\n"
+                << "Sensors healthy: " << (sensors.healthy() ? "YES" : "NO") << "\n";
+            std::cout.flush();
+            vTaskEndScheduler();
+            return;
+        }
+
         // Existing integration-test completion condition.
-               // Integration test passes only after the complete fault response.
+        // Integration test passes only after the complete fault response.
         if (
             integration_test_mode &&
             control_stats.executions >= 660 &&
@@ -694,10 +751,15 @@ void MonitoringTask(void*) {
             return;
         }
 
+        // Keep monitoring at its designed 100 ms period.
+        vTaskDelayUntil(&wake, pdMS_TO_TICKS(100));
+    }
+}
+
 // ============================================================
 // FREERTOS ERROR HOOKS
 // ============================================================
-}}
+
 extern "C" void vApplicationMallocFailedHook(void) {
 
     std::cout << "FATAL | malloc failed\n";
@@ -730,10 +792,17 @@ int main(int argc, char** argv) {
 
     integration_test_mode =
         (argc > 1 && std::string(argv[1]) == "--test");
+    recovery_test_mode =
+        (argc > 1 && std::string(argv[1]) == "--recovery-test");
+    recovery_test_start_tick = xTaskGetTickCount();
 
     std::cout
         << "EASE-RT-X | Integrated Embedded "
         << "Real-Time Autonomous Platform\n";
+
+    if (recovery_test_mode) {
+        std::cout << "RECOVERY TEST MODE | injecting timing and sensor faults\n";
+    }
 
     health_monitor.register_task("Communication", 50);
     health_monitor.register_task("Autonomy", 50);

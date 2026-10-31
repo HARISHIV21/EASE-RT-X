@@ -6,3 +6,6 @@ build/
 __pycache__/
 
 external/FreeRTOS-Kernel/
+
+build-mingw/
+*.bak

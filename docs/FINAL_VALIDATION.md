@@ -1,97 +1,192 @@
- # EASE-RT X Final Validation
+# EASE-RT-X — Final Validation Report
 
-The Windows host build is the primary executable demonstration. The results below are actual host-simulation measurements.
+## 1. Validation Overview
 
-## Automated verification
+EASE-RT-X is validated using a Windows host-based simulation environment with FreeRTOS, MinGW and CMake.
 
-- canfd_protocol_test: CAN-FD validation, sequence checking and freshness handling.
-- system_logic_test: timing thresholds, safety transitions, recovery, sensor fallback, perception, planning/control and diagnostics.
-- integrated_system_test: complete FreeRTOS execution with controlled timing faults, CAN-FD invalid-frame injection and safety recovery.
+The validation focuses on:
 
-## Integrated runtime evidence
+- Real-time task execution and health monitoring.
 
-### Timing fault
+- Timing supervision and deadline-miss detection.
 
-The Control task is intentionally delayed during a controlled interval.
+- CAN-FD protocol validation.
 
-Observed behavior:
+- Autonomous-system logic.
 
-FAIL_SAFE -> RECOVERY -> NORMAL
+- Fault detection and safety-state transitions.
 
-Measured:
+- Diagnostic event recording.
 
-- Control deadline misses: 60
-- Maximum Control execution: 15 ticks
-- Timing state reached: CRITICAL
-- Timing state after recovery: OK
-- Final system mode: NORMAL
+- Recovery after controlled fault injection.
 
-Timing thresholds:
+All runtime measurements in this report are host-simulation results.
 
-- Warning: 3 misses
-- Degraded: 10 misses
-- Critical: 50 misses
+## 2. Automated Verification
 
-### CAN-FD validation
+The current CMake configuration registers four CTest tests.
+| Test | Verification scope | Result |
+|---|---|---|
+| `canfd_protocol_test` | CAN-FD protocol validation, sequence checking and freshness handling | PASS |
+| `system_logic_test` | Timing thresholds, safety transitions, recovery, sensor fallback, perception, planning/control and diagnostics | PASS |
+| `timing_monitor_test` | Timing-monitor behaviour | PASS |
+| `integrated_system_test` | FreeRTOS execution and controlled integration fault injection | PASS |
 
-Controlled invalid CAN-FD frames were injected.
+**Latest recorded CTest result: 4/4 tests passed.**
 
-Final result:
+## 3. Integrated Runtime Fault-Injection Test
 
-- Received: 3425
-- Accepted: 3421
-- Rejected: 4
-- Consecutive rejections: 0
+### 3.1 Timing fault injection
 
-### Diagnostics
+A controlled delay is introduced into the Control task to evaluate timing supervision and safety behaviour.
 
-- Diagnostic records: 1
+Observed behaviour:
 
-### Safety recovery
+`NORMAL → FAIL_SAFE`
 
-The timing fault was cleared and the system recovered through:
-
-FAIL_SAFE -> RECOVERY -> NORMAL
-
-Final state:
-
-- System mode: NORMAL
-- RTOS task health: YES
-- Timing state: OK
-
-## Runtime measurements
-
+Measured results:
 | Measurement | Result |
 |---|---:|
-| Communication executions | 3421 |
+| Control deadline misses | 60 |
+| Maximum Control execution | 15 ticks |
+| Timing state reached | CRITICAL |
+| Diagnostic records | 1 |
+
+### 3.2 Timing thresholds
+| Timing condition | Configured threshold |
+|---|---:|
+| Warning | 3 misses |
+| Degraded | 10 misses |
+| Critical | 50 misses |
+
+The injected timing fault causes the timing monitor to escalate the system to the critical state and the safety supervisor to enter `FAIL_SAFE`.
+
+## 4. CAN-FD Communication Validation
+
+Controlled invalid CAN-FD frames are injected to evaluate message validation and rejection behaviour.
+
+Recorded results:
+| Measurement | Result |
+|---|---:|
+| Frames received | 3,425 |
+| Frames accepted | 3,421 |
+| Frames rejected | 4 |
+| Consecutive rejections at final report | 0 |
+
+The results demonstrate protocol-level validation and rejection of invalid frames in the simulation environment.
+
+## 5. Safety Recovery Verification
+
+A separate recovery-test execution evaluates system behaviour after the injected timing fault is cleared.
+
+Observed state sequence:
+
+`FAIL_SAFE → RECOVERY → NORMAL`
+
+The recovery test reported:
+
+```text
+
+RECOVERY TEST: PASS
+
+FAIL_SAFE observed: YES
+
+RECOVERY observed: YES
+
+Final safety mode: NORMAL
+
+Timing state: OK
+
+All task heartbeats healthy: YES
+
+Sensors healthy: YES
+
+```
+
+Final recovery conditions:
+
+- System mode: NORMAL
+
+- RTOS task health: YES
+
+- Timing state: OK
+
+- Sensors healthy: YES
+
+The dedicated recovery test is executed separately from CTest and is not counted as a fifth automated CTest test.
+
+## 6. Runtime Measurements
+
+Recorded values from the integrated runtime evidence:
+| Measurement | Result |
+|---|---:|
+| Communication executions | 3,421 |
 | Communication deadline misses | 0 |
 | Communication period | 5 ticks |
 | Autonomy executions | 856 |
 | Autonomy deadline misses | 0 |
 | Autonomy period | 20 ticks |
-| Safety executions | 1711 |
+| Safety executions | 1,711 |
 | Safety deadline misses | 0 |
 | Safety period | 10 ticks |
-| Control executions | 1711 |
+| Control executions | 1,711 |
 | Control deadline misses | 60 |
 | Control maximum execution | 15 ticks |
-| CAN-FD received | 3425 |
-| CAN-FD accepted | 3421 |
-| CAN-FD rejected | 4 |
+| CAN-FD frames received | 3,425 |
+| CAN-FD frames accepted | 3,421 |
+| CAN-FD frames rejected | 4 |
 | Diagnostic records | 1 |
 
-## Automated test result
+These are observed host-simulation execution counts and configured task periods, not hardware performance benchmarks.
 
-3/3 CTest tests passed:
+## 7. Validation Summary
 
-- canfd_protocol_test: PASS
-- system_logic_test: PASS
-- integrated_system_test: PASS
+The current validation demonstrates:
 
-## Evidence limitations
+- Successful compilation of the EASE-RT-X executable.
 
-These results are Windows/MinGW host-simulation measurements.
+- Four passing automated CTest tests.
 
-They are not hardware WCET measurements, production ECU guarantees, certification evidence, ISO 26262 compliance or production safety certification.
+- Detection of injected Control-task timing faults.
 
-The purpose is to demonstrate implemented real-time behavior, fault handling, diagnostics, safety recovery and automated verification.
+- Timing-state escalation to CRITICAL.
+
+- Safety transition into FAIL_SAFE.
+
+- CAN-FD invalid-frame rejection.
+
+- Diagnostic event recording.
+
+- Recovery through RECOVERY to NORMAL.
+
+- Restoration of healthy task and sensor status.
+
+## 8. Evidence and Limitations
+
+The results represent Windows 11 / MinGW host-simulation measurements.
+
+They do not establish:
+
+- Hardware-measured worst-case execution time (WCET).
+
+- Physical CAN-FD hardware performance.
+
+- Production ECU guarantees.
+
+- Hardware-in-the-loop validation.
+
+- ISO 26262 compliance or safety certification.
+
+- Flight-qualified or vehicle-qualified software.
+
+The purpose of this validation is to demonstrate implemented real-time software behaviour, communication validation, fault handling, diagnostic recording, safety supervision and recovery logic in a controlled simulation environment.
+
+---
+
+**Project:** EASE-RT-X
+
+**Validation environment:** Windows 11 / MinGW / CMake / FreeRTOS
+
+**Automated verification:** 4/4 CTest tests passed
+
+**Additional verification:** Dedicated recovery test passed
