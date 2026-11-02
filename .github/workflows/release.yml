@@ -1,0 +1,63 @@
+﻿name: EASE-RT X Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, Test and Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MinGW toolchain
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-make
+            git
+
+      - name: Build EASE-RT X
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\setup.ps1
+          if ($LASTEXITCODE -ne 0) { throw "Build failed" }
+
+      - name: Run automated tests
+        shell: pwsh
+        run: |
+          ctest --test-dir build --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw "Tests failed" }
+
+      - name: Prepare release package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release-package\docs | Out-Null
+          Copy-Item build\ease_rt_x.exe release-package\
+          Copy-Item README.md release-package\
+          Copy-Item docs\* release-package\docs\ -Recurse
+          $gccBin = Split-Path (Get-Command gcc).Source
+          $dllNames = objdump -p build\ease_rt_x.exe | Select-String "DLL Name:"
+          foreach ($line in $dllNames) {
+            $dll = ($line.ToString() -replace ".*DLL Name:\s*", "").Trim()
+            $source = Join-Path $gccBin $dll
+            if (Test-Path $source) { Copy-Item $source release-package\ }
+          }
+          Compress-Archive -Path release-package\* -DestinationPath "EASE-RT-X-${{ github.ref_name }}-Windows.zip" -Force
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: EASE-RT-X-${{ github.ref_name }}-Windows.zip
+          generate_release_notes: true
