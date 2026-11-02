@@ -1,0 +1,58 @@
+
+name: EASE-RT X CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and Test (Windows / MinGW)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install MinGW toolchain
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-make
+            git
+
+      - name: Verify build tools
+        shell: pwsh
+        run: |
+          gcc --version
+          g++ --version
+          cmake --version
+          mingw32-make --version
+
+      - name: Configure and build EASE-RT X
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\setup.ps1
+          if ($LASTEXITCODE -ne 0) {
+            throw "EASE-RT X build failed"
+          }
+
+      - name: Run automated tests
+        shell: pwsh
+        run: |
+          ctest --test-dir build --output-on-failure
+          if ($LASTEXITCODE -ne 0) {
+            throw "EASE-RT X tests failed"
+          }
