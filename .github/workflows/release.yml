@@ -54,6 +54,11 @@ jobs:
             $source = Join-Path $gccBin $dll
             if (Test-Path $source) { Copy-Item $source release-package\ }
           }
+          $threadDll = Join-Path $gccBin "libwinpthread-1.dll"
+          if (-not (Test-Path $threadDll)) {
+            throw "Required runtime DLL missing: libwinpthread-1.dll"
+          }
+          Copy-Item $threadDll release-package\
           Compress-Archive -Path release-package\* -DestinationPath "EASE-RT-X-${{ github.ref_name }}-Windows.zip" -Force
 
       - name: Publish GitHub Release
